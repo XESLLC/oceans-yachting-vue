@@ -17,6 +17,12 @@ if(process.env.NODE_ENV === "production") {
   const config = require('./config.js');
   dbRoute = config.dbRoute;
 }
+var forceSsl = function (req, res, next) {
+    if (req.headers['x-forwarded-proto'] !== 'https') {
+        return res.redirect(['https://', req.get('Host'), req.url].join(''));
+    }
+    return next();
+ };
 
 // connects our back end code with the database
 mongoose.connect(
@@ -32,6 +38,7 @@ db.once("open", () => console.log("connected to the database"));
 db.on("error", console.error.bind(console, "MongoDB connection error:"));
 
 if(process.env.NODE_ENV === "production") {
+  app.use(forceSsl)
   app.use(express.static(__dirname + "/public/"));
   app.get('/admin', function (req, res) {
     res.sendFile(__dirname + '/public/index.html');
